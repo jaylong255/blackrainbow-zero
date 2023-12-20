@@ -1,0 +1,59 @@
+version: "3.5"
+services:
+
+  php-cli:
+    build: 
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+      target: cli
+    env_file:
+      - .env.local
+    command: php artisan serve --host=0.0.0.0 --env=local
+    working_dir: /app
+    volumes:
+      - .:/app
+    networks:
+      - laravel-network
+    ports:
+      - 8000:8000
+
+  npm-cli:
+    build: 
+      context: .
+      dockerfile: ./docker/node/Dockerfile
+    working_dir: /app
+    volumes:
+      - .:/app
+    networks:
+      - laravel-network
+
+  db:
+    image: mariadb:10.5.5
+    command: --init-file /docker-entrypoint-initdb.d/0_init.sql
+    volumes:
+      - mysqldata:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/0_init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: password
+    networks:
+      - laravel-network
+    ports:
+      - 3306:3306
+
+  redis:
+    image: redis:6.0.8
+    ports:
+      - 6379:6379
+    networks:
+      - laravel-network
+
+volumes:
+  mysqldata: {}
+
+networks:
+  laravel-network:
+    driver: bridge
+
